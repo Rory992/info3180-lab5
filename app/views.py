@@ -5,7 +5,7 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
 
-from app import app, db, login_manager
+from app import app, db, login_manager, login_required
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from app.forms import LoginForm
@@ -51,16 +51,33 @@ def login():
             if user is not None and check_password_hash(user.password, password):
                 remember_me = False
 
-            if 'remember_me' in request.form:
-                remember_me = True
+                if 'remember_me' in request.form:
+                    remember_me = True
+            else:
+                flash('Username or Password Incorrect')
+                return redirect(url_for('login'))
 
             # get user id, load into session
             login_user(user)
 
-            # remember to flash a message to the user
-            flash('Succcessfully Logged In.')
-            return redirect(url_for("secure-page"))  # they should be redirected to a secure-page route instead
+            # remember to flash a message to the user 
+            flash('Succcessfully Logged In.')           
+            return redirect(url_for('secure_page'))  # they should be redirected to a secure-page route instead
     return render_template("login.html", form=form)
+
+
+@app.route("/secure-page")
+@login_required
+def secure_page():
+    return render_template("secure_page.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash('You have logged out.', 'danger')
+    return redirect(url_for('home'))
 
 
 # user_loader callback. This callback is used to reload the user object from
